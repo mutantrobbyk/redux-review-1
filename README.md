@@ -12,7 +12,7 @@ Many people struggle to implement the redux pattern their first few times. The b
 
 - redux
 - react-redux
-- redux-devtools-extension
+- redux-promise-middleware
 - react-router-dom (already implemented)
 
 ### Step 1
@@ -71,22 +71,27 @@ export default moviesReducer
 
 ### Step 2
 
-Our next step will be to set up our store and connect provide it to our application
+Our next step will be to set up our store and connect it to our application
 
-1. Create a file inside your `src` folder called `store.js` this will hold our redux store. This will also make it possible for us to use the redux devtools. If you do not have them installed you can find them [here](https://chrome.google.com/webstore/detail/redux-devtools/lmhkpmbekcpmknklioeibfkpmmfibljd?hl=en). They will make your life infinitely easier when dealing with redux because you will be able to dynamically check your redux state values.
-2. Import `createStore` from `redux`, `moviesReducer` from our `moviesReducer.js` file, and `devToolsEnhancer` from `redux-devtools-extension`. Only our `moviesReducer` is the default export so don't forget to put curly braces around the other two imports.
-3. Create a variable called `store` and set it equal to `createStore` invoked. Pass it our movies reducer as its first argument, its second argument should be `devToolsEnhancer` invoked. This will connect our app to the redux devtools.
-4. Inside of your `index.js` file, import `Provider` from `react-redux` and `store` from our `store.js` file. Wrap your app component in our Provider and pass it `store` as a prop called store. This will make our store available to our app.
+1. Create a file inside your `ducks` folder called `store.js` this will hold our redux store.
+2. Import `createStore`, `combineReducers`, `applyMiddleware` from `redux`, `promiseMiddleware` from `redux-promise-middleware`, and `moviesReducer` from our `moviesReducer.js` file. Both `moviesReducer` and promiseMiddleware are default exports, so don't forget to put curly braces around the other three imports.
+3. Create a variable called `rootReducer` and set it equal to `combineReducers` invoked. Pass it an object with our movies reducer as its argument.
+4. Invoke the `createStore` function and pass it `rootReducer` as its first argument and as its second argument, pass it the `applyMiddleware` function invoked with `promiseMiddleware` as its argument.
+5. Next, inside of your `index.js` file, import `Provider` from `react-redux` and `store` from our `store.js` file. Wrap your app component in our Provider and pass it `store` as a prop called store. This will make our store available to our app.
 
 <details>
 <summary>store.js solution</summary>
 
 ```js
-import { createStore } from 'redux'
+import { createStore, combineReducers, applyMiddleware } from 'redux'
+import promiseMiddleware from 'redux-promise-middleware'
 import moviesReducer from './ducks/moviesReducer'
-import { devToolsEnhancer } from 'redux-devtools-extension'
 
-export default createStore(moviesReducer, devToolsEnhancer())
+const rootReducer = combineReducers({
+  moviesReducer
+})
+
+export default createStore(rootReducer, applyMiddleware(promiseMiddleware))
 ```
 
 </details>
@@ -100,7 +105,7 @@ import ReactDOM from 'react-dom'
 import './index.css'
 import App from './App'
 import { HashRouter as Router } from 'react-router-dom'
-import {Provider} from 'react-redux
+import {Provider} from 'react-redux'
 import store from './store'
 
 ReactDOM.render(
@@ -120,11 +125,9 @@ ReactDOM.render(
 Our next step will be to connect our `MovieForm` component to our reducer and make it update the values on our redux state.
 
 1. In our `MovieForm` component, import `connect` from `react-redux` and `setMovieInfo` from our `moviesReducer.js` file.
-2. Wrap your export of `MovieForm` in the second invocation of connect (HINT: `connect` will be invoked twice, once to recieve `mapStateToProps` and a second time to recieve any action creators that we want to pass in).
+2. Wrap your export of `MovieForm` in the second invocation of connect (HINT: `connect` will be invoked twice, once to receive `mapStateToProps` and a second time to receive any action creators that we want to pass in).
 3. Because we don't need to display any redux state values in this component, just set them, instead of passing `mapStateToProps` to the first invocation of `connect`, we will pass `null` and an object containing our `setMovieInfo` function as the second argument.
 4. Finally, we want to modify our `handleSubmit` method to set those values on our redux state. Inside of this method, invoke the props version of `setMovieInfo`, passing it title, poster, and rating from our local state.
-
-> We can use our redux devtools to check that these values are setting properly. Open up your developer tools and find the redux devtools. They will show the current value of your redux state as well as any changes that happen.
 
 <details>
 <summary>MovieForm.js solution</summary>
@@ -150,10 +153,7 @@ class MovieForm extends Component {
   //Render method this does not need to be changed.
 }
 
-export default connect(
-  null,
-  { setMovieInfo }
-)(MovieForm)
+export default connect( null, { setMovieInfo } )(MovieForm)
 ```
 
 </details>
@@ -162,8 +162,8 @@ export default connect(
 
 Once we can get our form to properly update the values in our redux state, we need to edit `MovieConfirm` to display them.
 
-1. Import `connect` into your `MovieConfirm` component from `'react-redux'`.
-2. Wrap your export of `MovieConfirm` in the second invocation of connect.
+1. Import `connect` into your `MovieConfirm` component from `react-redux`
+2. Wrap your export of `MovieConfirm` in the second invocation of connect
 3. Outside of your component create a function called `mapStateToProps` which accepts a single argument, our redux state. You can call this whatever you want.
 4. Destructure `title`, `poster`, and `rating` from our redux state and return an object containing those three values from our `mapStateToProps` function. When provided to the first invocation of `connect` this will take those values from our redux state and put them on the props of our `MovieConfirm` component.
 5. Pass `mapStateToProps` to the first invocation of `connect` and console log `props` in our `MovieConfirm` component to test that these props are being applied properly.
@@ -175,7 +175,6 @@ Once we can get our form to properly update the values in our redux state, we ne
 ```js
 import React from 'react'
 import { connect } from 'react-redux'
-import { updateMovieList } from '../ducks/moviesReducer'
 import styles from './styles'
 
 const MovieConfirm = props => {
