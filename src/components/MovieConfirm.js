@@ -1,16 +1,25 @@
 import React from 'react'
 import styles from './styles'
+import {connect} from 'react-redux'
+import {updateMovieList} from '../redux/moviesReducer'
 
 const MovieConfirm = props => {
+
+  // {title: props.title, poster: props.poster, rating: props.rating}
+  //{title: title, poster:poster, rating: rating }
+  //{props.title: props.title}
   const confirmMovie = () => {
+    const {title, poster, rating} = props
+    props.updateMovieList({title, poster, rating})
     props.history.push('/list')
   }
-
+ 
+  console.log(props)
   return (
     <div style={styles.container}>
       <p style={styles.containerHeading}>CONFIRM YOUR DETAILS</p>
-      <p style={styles.confirmText}>{`TITLE - RATING`}</p>
-      <img src={`URL`} alt="Movie Poster" />
+      <p style={styles.confirmText}>{`${props.title} - ${props.rating}`}</p>
+      <img src={`${props.poster}`} alt="Movie Poster" />
       <div>
         <button
           onClick={() => props.history.push('/')}
@@ -25,4 +34,8 @@ const MovieConfirm = props => {
     </div>
   )
 }
-export default MovieConfirm
+const mapStateToProps = (store) => {
+  const {title, poster, rating} = store.moviesReducer
+  return {title, poster, rating}
+}
+export default connect(mapStateToProps, {updateMovieList})(MovieConfirm)
